@@ -1,0 +1,84 @@
+---
+title: "urbancity"
+output: html_document
+date: 12/12/2019
+---
+
+#Code for interested variables 
+WP14: ubrancity variable split into four categories:
+1) lagre city, 2) subrub of a large city, 3) small town or village, 4) rural area or farm, 
+
+#Step 1: filter the variables from the data, summarize and calculate percentage 
+
+```{r }
+#dataset
+names(urdata)
+table(urdata$WP14,urdata$WP132)
+
+urbancitysubset <- urdata %>% 
+  select(WPID_RANDOM,WP14,WP132) %>% 
+  drop_na() %>% 
+   group_by(WP132, WP14) %>%
+    summarize(N = n()) %>%
+    mutate(freq = N / sum(N),
+           pct = round((freq*100), 0))
+
+#clean urbancity which includes "DK" and "Refused" values 
+urbancitysubset2 <- urbancitysubset[-c(4,5,10,11,16,17,22,23),]
+```
+
+#Step 2: Make group bar chart 
+
+```{r}
+urbancitychart <- ggplot(urbancitysubset2, aes(WP132, pct)) +   
+  geom_bar(aes(fill = WP14), position = "dodge", stat="identity")
+
+plot(urbancitychart)
+
+```
+
+#Step 3: Customizing Graphs 
+```{r}
+library(ggplot2)
+urbancitychart + scale_fill_brewer(palette = "Spectral") #coloring
+
+#Numeric Formats
+install.packages("scales")
+library(scales)
+library(ggplot2)
+install.packages("ggthemes")
+library(ggthemes)
+
+#labelling
+urbancitychart <- urbancitychart + labs(title = "Public Satisfaction on Governments' efforts for Environmental Preservation by Urbancity",
+                      subtitle = "Gallup World Poll 2018 Data",
+                     x = "Responses on Satisfication",
+                     caption = "source: https://wpr.gallup.com",
+                     y = "Percentage",
+                     fill = "Categories of Urbancity") +
+  scale_fill_brewer(palette = "Spectral") + 
+  theme_linedraw()
+
+urbancitychart <- urbancitychart + theme_clean()
+
+```
+
+#Step 4: Save the plot 
+
+```{r}
+ggsave(urbancitychart, filename = "urbancity.png", width = 15, height = 10)
+
+ggsave(urbancitychart, filename = "urbancity_5x6.png", width = 5, height = 6, dpi = 300)
+ 
+#recommended code 
+
+#p + geom_text(, width = 15, height = 10
+  #aes(label = counts, group = color),
+#ggsave(plot_3, file = "fistoutput.png", width = 15, height = 10)
+
+```
+
+
+
+
+

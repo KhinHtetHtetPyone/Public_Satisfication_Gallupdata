@@ -1,0 +1,170 @@
+---
+title: "Satisfied_choropleth_map"
+author: "Khin Htet Htet Pyone"
+Date: 12/10/2019
+output: html_document
+---
+#Step 1: load data and requried packages 
+
+```{r setup}
+#data
+gallupfilter <- read.csv(gallupfilter)
+data(gallupfilter)
+
+#packages 
+library(choroplethr)
+library(choroplethrMaps)
+data("country.map")
+data("country.regions")
+
+```
+
+#Step 2: Check the names of the region in country.map
+
+```{r}
+#view the first 12 region names in country.map to see the names
+data("county.map", package = "choroplethrMaps" )
+head(unique(country.map$region), 15)
+```
+
+#Step 3: Filter interested variables and analyze the data
+##Group interested variables, summarize and calculate percentage
+1. country new = A string variable lisitng each country's name and uniquely identifying each country
+2.  WP 132: Efforts to preserve the environment 
+(Question: In your country, are you satifsfied or disatisfied with efforts to preserve the envionment?)
+
+```{r}
+
+mapdata1 <- gallupfliter %>% select(countrynew, WP132)
+
+percentformap <- mapdata1 %>%
+  dplyr::group_by(countrynew, WP132) %>%
+  dplyr::summarize(N=n()) %>%
+  mutate(freq=N/sum(N), pct=round((freq*100), 0))
+
+```
+
+#Step 4: Test choropleth mapping
+##filter "Satisfied" from WP132(questionresponse), rename *countrynew* to "region", ungroup region and mutate lower case so as to match with the names in the country.map data frame. 
+
+```{r}
+library(dplyr)
+library(choroplethr)
+
+plotmap1 <- percentformap %>% 
+  filter(WP132 == "Satisfied") %>% 
+  rename(region = countrynew,
+         value = pct) %>% 
+  ungroup(region) %>% 
+  mutate(region = tolower(region))
+
+```
+
+#Step 5:Match spacing of the same in dataframe and try *choropleth mapping* 
+
+```{r}
+percentformap$countrynew = gsub(' ', "", percentformap$countrynew)
+
+satisfied_data <- percentformap %>% 
+  filter(WP132 == "Satisfied") %>% 
+  rename(region = countrynew,
+         value = pct) %>% 
+  ungroup(region) %>% 
+  mutate(region = tolower(region)) 
+
+country_choropleth(satisfied_data)
+```
+
+#Step 6: Recode the names that are not mappable 
+Some country names in my df are not the same with the *country.map* df. So, check the different names and recode. 
+
+```{r}
+#check same and different names for coding 
+satisfied_data$region[satisfied_data$region %in% country.regions$region]
+satisfied_data$region[!satisfied_data$region %in% country.regions$region]
+country.regions$region[!country.regions$region %in% satisfied_data$region]
+
+```
+
+##recoding the names 
+```{r}
+satisfied_data2 <- satisfied_data %>% 
+  mutate(region= recode(region,
+                        "burkinafaso"= "burkina faso",
+                        "bosniaherzegovina"= "bosnia and herzegovina",
+                        "czechrepublic"= "czech republic",
+                        "costarica"= "costa rica",
+                        "dominicanrepublic" = "dominican republic",
+                        "elsalvador"= "el salvador",
+                        "ivorycoast" = "ivory coast",
+                        "newzealand"= "new zealand",
+                        "southkorea"= "south korea",
+                        "unitedkingdom"= "united kingdom",
+                        "unitedstates"= "united states of america",
+                        "srilanka"= "sri lanka",
+                        "unitedarabemirates" = "united arab emirates",
+                        "tanzania" = "united republic of tanzania",
+                        "southafrica"= "south africa",
+                        "northerncyprus"= "northern cyprus",
+                        "serbia"= "republic of serbia",
+                        "saudiarabia" = "saudi arabia",
+                        "sierraleone" = "sierra leone",
+                        "congobrazzaville"= "republic of congo"))
+```
+
+#Step 7:(Optional) remove not mappable regions by row numbers 
+countries (omoros, malta, mauritius, palestine, singapore) in my safisfied data set but not in *country.map* df. so, reomve them by roll number 
+
+```{r}
+#sample code: main_data2 <- main_data[ ! main_data$NAMES %in% NAMES_list, ]
+#sample code: DF2 = DF1[-c(2),]
+#satisfied_data3 <- satisfied_data2[!satisfied_data2$region %n%"comoros","malta", "mauritius","palestine","singapore"]
+
+satisfied_data3 <- satisfied_data2[-c(27,80,82,100,114),]
+country_choropleth(satisfied_data3)
+```
+
+#Step 8: Plotting the map 
+
+```{r}
+library(ggplot2)
+satisficationmap <- country_choropleth(satisfied_data3,
+                   num_colors = 9) +
+  scale_fill_brewer(palette = "YlOrd") +
+  labs (title = "Public Satisfaction on Governments' Effort for Environmental Preservation by country",
+        subtitle = "Gallup World Poll 2018 data",
+        fill = "Percentage of satisfication",
+        caption = "source: https://wpr.gallup.com") 
+  
+library(extrafont)
+library(ggthemes)
+
+satisficationmap <- satisficationmap + theme_bw() +
+  theme(text = element_text(size = 12))
+  
+
+satisficationmap
+```
+
+#Step 9: Save the map 
+
+```{r}
+library(png)
+ggsave(satisficationmap, filename = "satisficationmap.png", width = 20, height = 15)
+
+png(filename = "satisficationmap2.png",
+    width = 5, height = 6,
+    units = "in", res = 300)
+dev.off()
+
+
+ggsave(filename = "satisficationmap2.png",
+       plot = fig1,device = "png",
+       width = 5,height = 6,units = "in",dpi = 300)
+
+
+ggsave(satisficationmap, filename = "satisficationmap2.png", 
+       width = 5, height = 6, units = "in",dpi = 300
+       )
+
+```

@@ -1,0 +1,157 @@
+---
+title: "dissatisfied_choropleth"
+author: "Khin Htet Htet Pyone"
+output: html_document
+Date: 12/11/2019
+---
+
+```{r setup}
+library(choroplethr)
+library(choroplethrMaps)
+data("country.map")
+data("country.regions")
+
+```
+
+#Step 1:
+##calculate percentage for WP132 - public satisfication on environmental perception with each country in the data set
+
+```{r}
+percentformap <- mapdata1 %>%
+  dplyr::group_by(countrynew, WP132) %>%
+  dplyr::summarize(N=n()) %>%
+  mutate(freq=N/sum(N), pct=round((freq*100), 0))
+```
+
+#Step 2:
+##filter "Dissatisfied level" from the dataset and rename the names in "countrynew" to lowercase so as to match with the country.map dataset
+
+```{r}
+dissatisfied_data <- percentformap %>% 
+  filter(WP132 == "Dissatisfied") %>% 
+  rename(region = countrynew,
+         value = pct) %>% 
+  ungroup(region) %>% 
+  mutate(region = tolower(region))
+
+```
+
+#Step 3:
+##Check the names in two dataset dissatisfied_data Vs. country.regions
+
+```{r}
+head(unique(country.map$region), 20) #from country region dataset for mapping
+head(unique(dissatisfied_data$region), 20) #from disatisfied dataset
+```
+
+#Step 4:correct spacing 
+
+```{r}
+#use percentformap dataset in step 1 
+percentformap$countrynew = gsub(' ', "", percentformap$countrynew)
+
+#get disatisfied data 
+dissatisfied_data <- percentformap %>% 
+  filter(WP132 == "Dissatisfied") %>% 
+  rename(region = countrynew,
+         value = pct) %>% 
+  ungroup(region) %>% 
+  mutate(region = tolower(region))
+
+country_choropleth(dissatisfied_data) #checkchoropleth mapping
+
+```
+
+#Step 5:check the differnt spelling for the names 
+
+```{r}
+dissatisfied_data$region[dissatisfied_data$region %in% country.regions$region] #same names  
+dissatisfied_data$region[!dissatisfied_data$region %in% country.regions$region]c#different names 
+
+
+```
+
+#Step 6: recode the names 
+
+```{r}
+dissatisfied_data2 <- dissatisfied_data %>% 
+  mutate(region= recode(region,
+                        "burkinafaso"= "burkina faso",
+                        "bosniaherzegovina"= "bosnia and herzegovina",
+                        "czechrepublic"= "czech republic",
+                        "costarica"= "costa rica",
+                        "dominicanrepublic" = "dominican republic",
+                        "elsalvador"= "el salvador",
+                        "ivorycoast" = "ivory coast",
+                        "newzealand"= "new zealand",
+                        "southkorea"= "south korea",
+                        "unitedkingdom"= "united kingdom",
+                        "unitedstates"= "united states of america",
+                        "srilanka"= "sri lanka",
+                        "unitedarabemirates" = "united arab emirates",
+                        "tanzania" = "united republic of tanzania",
+                        "southafrica"= "south africa",
+                        "northerncyprus"= "northern cyprus",
+                        "serbia"= "republic of serbia",
+                        "saudiarabia" = "saudi arabia",
+                        "sierraleone" = "sierra leone",
+                        "congobrazzaville"= "republic of congo"))
+
+country_choropleth(dissatisfied_data2)
+```
+
+#Step 7: Customizing maps 
+```{r}
+#color
+install.packages("RColorBrewer")
+library(RColorBrewer)
+display.brewer.all()
+
+library(ggplot2)
+
+country_choropleth(dissatisfied_data2,
+                   num_colors = 9) +
+  scale_fill_brewer (palette = "YlOrBr") +
+  labs (title = "Public distisfaction on Governments' effort on Environmental Preservation by Country",
+        subtitle = "Gallup 2018 data",
+        fill = "Percentage of dissatisfication")
+
+dissatisficationmap <- country_choropleth(dissatisfied_data2,
+                   num_colors = 9) +
+  scale_fill_brewer (palette = "YlOrBr") +
+  labs (title = "Public dissatisfaction on Governments' effort for Environmental Preservation by Country",
+        subtitle = "Gallup 2018 data",
+        fill = "Percentage of dissatisfication",
+        caption = "source: https://wpr.gallup.com")
+
+plot(dissatisficationmap)
+
+library(ggplot2)
+#font
+install.packages("extrafont")
+library(extrafont)
+font_import()
+fonts()
+
+ dissatisfication <- dissatisficationmap + 
+  theme(text = element_text(size = 10)) + 
+  theme(legend.title.align = 0.5) + 
+  theme_few()
+plot(dissatisfication)
+
+```
+
+#Step 8:save the map 
+```{r}
+
+library(ggplot2)
+ggsave(dissatisfication, filename = "dissatisficationmap.png", 
+       width = 20, height = 15, units = "in", dpi = 300)
+
+
+#recommended format 
+ggsave(dissatisfication, filename = "dissatisficationmap_5x6.png", 
+       width = 5, height = 6, units = "in", dpi = 300)
+```
+
+

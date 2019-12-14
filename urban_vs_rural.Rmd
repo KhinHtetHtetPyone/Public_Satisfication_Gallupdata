@@ -1,0 +1,128 @@
+---
+title: "urban_vs_rural"
+author: "Khin Htet Htet Pyone"
+Date: "12/13/2019"
+output: html_document
+---
+#Step 1: load data and required packages 
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+urdata <- readRDS("/Users/khinhtethtetpyone/Downloads/g.subset.rds")
+names(urdata)
+```
+
+#Step 2: filter interested variables, summarize and calculate percentage 
+code WP 7572: urban and rural in many regions 
+
+```{r}
+table(urdata$WP132,urdata$WP7572)
+table7572 <- table(urdata$WP132,urdata$WP7572)
+
+
+urdatasubset <- urdata %>% 
+  select(WPID_RANDOM,WP7572,WP132) %>% 
+  drop_na() %>% 
+   group_by(WP132, WP7572) %>%
+    summarize(N = n()) %>%
+    mutate(freq = N / sum(N),
+           pct = round((freq*100), 0))
+
+```
+
+
+#Step 3:Make group bar chart  
+
+```{r}
+ library(ggplot2)
+#code for grouping 
+ggplot(urdatasubset,
+       aes(x= WP132,
+           fill= WP7572)) +
+  geom_bar(position = "dodge")
+```
+
+#Stpe 4:prepare dataset for group bar chart 
+
+```{r}
+#edit table 
+groupbardata <- urdatasubset %>% 
+  select (WP132, WP7572, pct)
+
+#barplot
+ggplot(groupbardata) +
+  geom_col(aes(x= WP132, y= pct, fill = WP7572),
+           positon = "dodge")
+
+  
+#groupbar chart
+ggplot(groupbardata) +
+  geom_col(aes(x= WP132, y=pct, fill = WP7572))
+
+
+ggplot(urdatasubset,
+       aes(x= WP132, 
+           fill= WP7572)) +
+  geom_bar(position = "dodge")
+
+#sample code
+#grouped bar chart
+
+#pct
+urbarpct <- ggplot(groupbardata, aes(WP132, pct)) +   
+  geom_bar(aes(fill = WP7572), position = "dodge", stat="identity")
+
+plot(urbarpct)
+
+```
+
+#Step 5: (Optional)remove DK and Refused 
+
+```{r}
+#satisfied_data3 <- satisfied_data2[-c(27,80,82,100,114),]
+
+groupbardata2 <- groupbardata[-c(5,6,7,8),]
+
+urbarchart <- ggplot(groupbardata2, aes(WP132, pct)) +   
+  geom_bar(aes(fill = WP7572), position = "dodge", stat="identity")
+plot(urbarchart)
+
+```
+
+#Step 6: Customizing Graphs 
+```{r}
+plot(urbarpct)
+urbarpct
+library(ggplot2)
+
+ruralVsurban <- urbarpct + labs (title = "Rual and Urban Satisfaction on Governments' efforts on Environmental Preservation",
+                      subtitle = "Gallup World Poll 2018 Data",
+                      caption = "source: https://wpr.gallup.com",
+                     x = "Responses on Satisfication",
+                     y = "Percentage",
+                     fill = "Rural Vs Urban") +
+  scale_fill_brewer(palette = "Dark2") + 
+  theme_classic()
+
+ruralVsurban <- ruralVsurban + theme_get()
+```
+
+#Step 7: Save the plot 
+```{r}
+ggsave(ruralVsurban, filename = "Rural_Vs_Urban.png", width = 10, height = 10)
+
+ggsave(ruralVsurban, filename = "RuralUrban_5x6.png",
+       width = 5, height = 6,
+       units = "in", dpi = 300)
+
+
+#ggsave(ruralVsurban, fileneame = "RuralvsUrban2.png",
+       #plot = fig1, device = "png"
+       #width = 5, height = 6,
+       #units = "in", dpi = 300)
+
+
+```
+
+

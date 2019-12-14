@@ -1,0 +1,151 @@
+---
+title: "by region analysis"
+Date: 11/5/2019
+output:
+  html_document: default
+  pdf_document: default
+Author: Khin Htet Htet Pyone
+---
+# Public satisfication on envrionmental preservation
+
+## Project Description 
+- Title: Public Attitudes on Enviornemtnal Conservation.
+- use data set from Gallup world poll's 2018 survey 
+- Main question for analysis: Efforts to preserve the environment 
+- Interested variables:
+1. category of global regions (Europe, former Soviet Union, Asia, Americas, Middle East, North Africa, sub-Saharan Asia)
+2. categories of urbanicty (large city, subrub of a lagre city, small town or village, rural area or farm)
+3. ubran vs. rural
+
+## Expected outputs 
+1. graphs (overall and multiple) showing public satisfication on environemtnal preservation according to global regions, urnacnity, urban vs. rual 
+2. Choropleth maps - to show data by county using colour or shading on predefined areas to indicate average values of a numeric variable in that area such as Satisfication by country 
+
+## Methodology
+### Data
+This dataset is a subset of the full Gallup World Poll 2018 data and includes only wave 13.1 and 13.2 i.e. more than one filed work was collected within a year.
+
+##Getting data
+
+```{r}
+#write.csv(gallup.subset,'/Users/khinhtethtetpyone/Desktop/data_science/My Project/Public-satisfication-on-envrionmental-preservation/gallupsubset.csv', row.names = FALSE)
+
+# write.csv(gallup.small, '/Users/khinhtethtetpyone/Desktop/data_science/My Project/Public-satisfication-on-envrionmental-preservation/gallupsmall.csv', row.names=FALSE)
+
+#gallup.subset <- read.csv("gallupsubset.csv")
+#gallup.small <- read.csv("gallupsmall.csv")
+```
+
+## Data filtering process
+### Step 1: setup
+
+install the packages needed for analysis. 
+
+```{r}
+library(plyr)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+```
+
+### Step 2:load and explore Gallup worldpoll data
+
+Gallup.small comes from gallup.subset data set exclude the index which are not useful for my analysis and then filter wave 13.1 and 13.2 which are the peroids of the year that the data collected. 
+
+```{r}
+gallup.subset <- read.csv("gallupsubset.csv")
+
+gallupfliter <- gallup.subset %>% 
+select(-starts_with("INDEX")) %>%
+ filter(WAVE == 13.1 | WAVE == 13.2)
+
+```
+
+###  Step 3:Filter interested variables 
+
+Code WP 132: Efforts to preserve the environment 
+(Question: In your country, are you satifsfied or disatisfied with efforts to preserve the envionment?)
+
+#### Variable 1: Global regions 
+code: REG_GLOBAL
+category of global regions (Europe, former Soviet Union, Asia, Americas, Middle East, North Africa, sub-Saharan Asia)
+
+```{r}
+mydata1 <- gallupfliter %>% select(WPID_RANDOM, WP132, REG_GLOBAL)
+
+mydata1
+```
+
+### Step 4: Look at the levels of variables 
+look at the levels of the factor and see summary
+
+```{r}
+levels(gallup.small$WP132)
+levels(gallup.small$REG_GLOBAL)
+summary <- summary(gallup.small$REG_GLOBAL)
+summary(mydata1)
+
+```
+
+#### Analyze the data grouping by region, summarize and calculate percentage 
+
+```{r}
+gdf <- mydata1 %>%
+  dplyr::group_by(REG_GLOBAL, WP132) %>%
+  dplyr::summarize(N=n()) %>%
+  mutate(freq=N/sum(N), pct=round((freq*100), 0))
+
+#drop "refused" since the pct is 0
+
+regiondf <- subset(gdf, WP132 != "(Refused)") #drop "refused"
+```
+
+### Step 5: Make a stacked bar chart 
+####Prerequisites
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+library(extrafont)
+library(ggthemes)    
+library(plyr)
+library(scales)
+```
+
+```{r}
+plot <- ggplot(data = regiondf, mapping = aes(x=REG_GLOBAL, y=pct, fill=WP132))
+plot
+plot + geom_bar(position="fill", stat="identity")
+```
+
+### Step 6:Plotting 
+
+
+```{r}
+plot_l <- ggplot(regiondf, mapping = aes(x= REG_GLOBAL, y= pct, fill= WP132, label = pct))+
+  geom_bar(stat = "identity") +
+  geom_text(size = 3, position = position_stack(vjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Public Satisficstion on Governments' Effort for Environmental Preservation by Global Regions") + xlab ("Global Regions") +ylab  ("Percent of Satisfication") + 
+  scale_fill_brewer(palette = "Paired") + 
+  labs( title = "Public Satisficstion on Governments' Effort for Environmental Preservation by Global Regions",
+        subtitle ="Gallup World Poll 2018 Data",
+        caption = "source: https://wpr.gallup.com") +
+  labs(fill = "Are you satifsfied or disatisfied with efforts to preserve the envionment?")
+
+plot_l 
+
+```
+
+### Step 7: Save the plot
+```{r}
+ggsave(plot_l, file = "byglobalregions.png", width = 15, height = 10)
+
+ggsave("byglobalregions.png", width = 15,  height = 8, dpi = 300)
+
+ggsave("byglobalregions2.png", width = 6, height = 4, units = "in",
+       dpi = 300)
+```
+
+
