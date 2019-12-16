@@ -45,7 +45,7 @@ percentformap <- mapdata1 %>%
 ```
 
 #Step 4: Test choropleth mapping
-##filter "Satisfied" from WP132(questionresponse), rename *countrynew* to "region", ungroup region and mutate lower case so as to match with the names in the country.map data frame. 
+##filter "Satisfied" from WP132(questionresponse), rename *countrynew* to *region*, ungroup region and mutate lower case so as to match with the names in the country.map data frame. 
 
 ```{r}
 library(dplyr)
